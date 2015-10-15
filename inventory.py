@@ -1,8 +1,6 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level
-#of this repository contains the full copyright notices and license terms.
-from trytond.model import Workflow, Model, ModelView, ModelSQL, fields
-from trytond.pyson import Not, Equal, Eval, Or, Bool
-from trytond import backend
+# The COPYRIGHT file at the top level of this repository contains the full
+# copyright notices and license terms.
+from trytond.model import ModelView, fields
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 
@@ -13,8 +11,9 @@ __metaclass__ = PoolMeta
 class Inventory:
     __name__ = 'stock.inventory'
     product_category = fields.Many2One('product.category', 'Category')
-    init_quantity = fields.Boolean('Init Quanity')
-
+    init_quantity_zero = fields.Boolean('Init Quanity Zero',
+        help='Mark this option to init the quantity of new lines created by '
+        '"Complete Inventory" to zero.')
 
     @classmethod
     @ModelView.button
@@ -23,6 +22,7 @@ class Inventory:
         Complete or update the inventories
         '''
         pool = Pool()
+        Category = pool.get('product.category')
         Line = pool.get('stock.inventory.line')
         Product = pool.get('product.product')
 
@@ -30,14 +30,12 @@ class Inventory:
         to_create = []
         for inventory in inventories:
             # Compute product quantities
-
-
-            Category = pool.get('product.category')
-            search = []
-            product_ids =[]
+            product_ids = []
             if inventory.product_category:
-                search = [('parent', 'child_of', [inventory.product_category.id])]
-                categories = Category.search(search)
+                categories = Category.search([
+                        ('parent', 'child_of',
+                            [inventory.product_category.id]),
+                        ])
                 products = Product.search([('category', 'in', categories)])
                 product_ids = [p.id for p in products]
 
@@ -77,7 +75,8 @@ class Inventory:
             for key, quantity in pbl.iteritems():
                 product_id = key[grouping.index('product') + 1]
 
-                if inventory.product_category and product_id not in product_ids:
+                if (inventory.product_category
+                        and product_id not in product_ids):
                     continue
 
                 if (product2type[product_id] != 'goods'
@@ -101,8 +100,6 @@ class InventoryLine:
     def create_values4complete(cls, inventory, quantity):
         values = super(InventoryLine, cls).create_values4complete(inventory,
             quantity)
-    
-        if inventory.init_quantity:
+        if inventory.init_quantity_zero:
             values['quantity'] = 0.0
-        
         return values

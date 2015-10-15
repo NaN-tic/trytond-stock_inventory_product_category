@@ -15,6 +15,5 @@
             <field name="inherit" ref="stock.inventory_view_tree"/>
             <field name="name">inventory_tree</field>
         </record>
-
     </data>
 </tryton>
