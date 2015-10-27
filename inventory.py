@@ -37,7 +37,7 @@ class Inventory:
         to_create = []
         for inventory in inventories:
             # Compute product quantities
-            product_ids = []
+            product_ids = None
             if inventory.product_category:
                 categories = Category.search([
                         ('parent', 'child_of',
@@ -48,7 +48,8 @@ class Inventory:
 
             with Transaction().set_context(stock_date_end=inventory.date):
                 pbl = Product.products_by_location(
-                    [inventory.location.id], grouping=grouping)
+                    [inventory.location.id], product_ids=product_ids,
+                    grouping=grouping)
 
             # Index some data
             product2type = {}
@@ -81,10 +82,6 @@ class Inventory:
             # Create lines if needed
             for key, quantity in pbl.iteritems():
                 product_id = key[grouping.index('product') + 1]
-
-                if (inventory.product_category
-                        and product_id not in product_ids):
-                    continue
 
                 if (product2type[product_id] != 'goods'
                         or product2consumable[product_id]):
