@@ -1,0 +1,19 @@
+#
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "field:stock.inventory,init_quantity_zero:"
+msgid "Init Quanity Zero"
+msgstr "Inicializar cantidades a cero"
+
+msgctxt "field:stock.inventory,product_category:"
+msgid "Category"
+msgstr "Categoría"
+
+msgctxt "help:stock.inventory,init_quantity_zero:"
+msgid ""
+"Mark this option to init the quantity of new lines created by \"Complete "
+"Inventory\" to zero."
+msgstr ""
+"Marca esta opción para inicializar a cero la quantidad de las nuevas líneas "
+"creadas por \"Inventario completo\"."
