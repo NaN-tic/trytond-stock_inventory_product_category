@@ -3,6 +3,7 @@
 from trytond.model import ModelView, fields
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
+from trytond.pyson import Eval
 
 __all__ = ['Inventory', 'InventoryLine']
 __metaclass__ = PoolMeta
@@ -10,8 +11,14 @@ __metaclass__ = PoolMeta
 
 class Inventory:
     __name__ = 'stock.inventory'
-    product_category = fields.Many2One('product.category', 'Category')
-    init_quantity_zero = fields.Boolean('Init Quanity Zero',
+    product_category = fields.Many2One('product.category', 'Category', states={
+            'readonly': Eval('state') != 'draft',
+            },
+        depends=['state'])
+    init_quantity_zero = fields.Boolean('Init Quanity Zero', states={
+            'readonly': Eval('state') != 'draft',
+            },
+        depends=['state'],
         help='Mark this option to init the quantity of new lines created by '
         '"Complete Inventory" to zero.')
 
