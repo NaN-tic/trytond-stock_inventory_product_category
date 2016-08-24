@@ -24,7 +24,7 @@ class Inventory:
 
     @classmethod
     @ModelView.button
-    def complete_lines(cls, inventories):
+    def complete_lines(cls, inventories, fill=True):
         '''
         Complete or update the inventories
         '''
