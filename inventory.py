@@ -6,11 +6,12 @@ from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Eval
 
 __all__ = ['Inventory', 'InventoryLine']
-__metaclass__ = PoolMeta
 
 
 class Inventory:
     __name__ = 'stock.inventory'
+    __metaclass__ = PoolMeta
+
     product_category = fields.Many2One('product.category', 'Category', states={
             'readonly': Eval('state') != 'draft',
             },
@@ -99,6 +100,7 @@ class Inventory:
 
 class InventoryLine:
     __name__ = 'stock.inventory.line'
+    __metaclass__ = PoolMeta
 
     @classmethod
     def create_values4complete(cls, inventory, quantity):
