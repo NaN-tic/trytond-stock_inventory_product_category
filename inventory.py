@@ -44,7 +44,8 @@ class Inventory:
                         ('parent', 'child_of',
                             [inventory.product_category.id]),
                         ])
-                products = Product.search([('category', 'in', categories)])
+                products = Product.search([('categories.id', 'in', [x.id
+                    for x in categories])])
                 product_ids = [p.id for p in products]
 
             with Transaction().set_context(stock_date_end=inventory.date):
