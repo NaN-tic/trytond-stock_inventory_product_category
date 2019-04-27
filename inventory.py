@@ -81,7 +81,7 @@ class Inventory(metaclass=PoolMeta):
                     Line.write([line], values)
 
             # Create lines if needed
-            for key, quantity in pbl.iteritems():
+            for key, quantity in pbl.items():
                 product_id = key[grouping.index('product') + 1]
 
                 if (product2type[product_id] != 'goods'
@@ -100,7 +100,7 @@ class Inventory(metaclass=PoolMeta):
 
 class InventoryLine(metaclass=PoolMeta):
     __name__ = 'stock.inventory.line'
-    
+
     @classmethod
     def create_values4complete(cls, inventory, quantity):
         values = super(InventoryLine, cls).create_values4complete(inventory,
