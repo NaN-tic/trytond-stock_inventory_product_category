@@ -80,6 +80,9 @@ class Inventory(metaclass=PoolMeta):
                 if values:
                     Line.write([line], values)
 
+            if not fill:
+                continue
+
             # Create lines if needed
             for key, quantity in pbl.items():
                 product_id = key[grouping.index('product') + 1]
