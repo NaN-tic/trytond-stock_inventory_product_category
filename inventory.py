@@ -13,12 +13,10 @@ class Inventory(metaclass=PoolMeta):
 
     product_category = fields.Many2One('product.category', 'Category', states={
             'readonly': Eval('state') != 'draft',
-            },
-        depends=['state'])
+            })
     init_quantity_zero = fields.Boolean('Init Quanity Zero', states={
             'readonly': Eval('state') != 'draft',
             },
-        depends=['state'],
         help='Mark this option to init the quantity of new lines created by '
         '"Complete Inventory" to zero.')
 
