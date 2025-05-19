@@ -32,8 +32,12 @@ class Inventory(metaclass=PoolMeta):
         Product = pool.get('product.product')
 
         grouping = cls.grouping()
-        to_create = []
+        to_save, to_delete = [], []
         for inventory in inventories:
+            # Once done computation is wrong because include created moves
+            if inventory.state == 'done':
+                continue
+
             # Compute product quantities
             product_ids = None
             if inventory.product_category:
@@ -45,28 +49,18 @@ class Inventory(metaclass=PoolMeta):
                     for x in categories])])
                 product_ids = [p.id for p in products]
 
-            with Transaction().set_context(stock_date_end=inventory.date):
+            # Compute product quantities
+            with Transaction().set_context(
+                    company=inventory.company.id,
+                    stock_date_end=inventory.date):
                 pbl = Product.products_by_location(
                     [inventory.location.id], grouping_filter=(product_ids,),
                     grouping=grouping)
 
-            # Index some data
-            product2type = {}
-            product2consumable = {}
-            for product in Product.browse([line[1] for line in pbl]):
-                product2type[product.id] = product.type
-                product2consumable[product.id] = product.consumable
-
             # Update existing lines
             for line in inventory.lines:
-                if not (line.product.active and
-                        line.product.type == 'goods'
-                        and not line.product.consumable):
-                    Line.delete([line])
-                    continue
-
-                if inventory.product_category and line.product not in products:
-                    Line.delete([line])
+                if line.product.type != 'goods':
+                    to_delete.append(line)
                     continue
 
                 key = (inventory.location.id,) + line.unique_key
@@ -74,38 +68,45 @@ class Inventory(metaclass=PoolMeta):
                     quantity = pbl.pop(key)
                 else:
                     quantity = 0.0
-                values = line.update_values4complete(quantity)
-                if values:
-                    Line.write([line], values)
+                line.update_for_complete(quantity)
+                to_save.append(line)
 
             if not fill:
                 continue
 
+            product_idx = grouping.index('product') + 1
+            # Index some data
+            product2type = {}
+            product2consumable = {}
+            for product in Product.browse({line[product_idx] for line in pbl}):
+                product2type[product.id] = product.type
+                product2consumable[product.id] = product.consumable
+
             # Create lines if needed
             for key, quantity in pbl.items():
-                product_id = key[grouping.index('product') + 1]
-
+                product_id = key[product_idx]
                 if (product2type[product_id] != 'goods'
                         or product2consumable[product_id]):
                     continue
                 if not quantity:
                     continue
 
-                values = Line.create_values4complete(inventory, quantity)
-                for i, fname in enumerate(grouping, 1):
-                    values[fname] = key[i]
-                to_create.append(values)
-        if to_create:
-            Line.create(to_create)
+                line = Line(
+                    inventory=inventory,
+                    **{fname: key[i] for i, fname in enumerate(grouping, 1)})
+                line.update_for_complete(quantity)
+                to_save.append(line)
+        if to_delete:
+            Line.delete(to_delete)
+        if to_save:
+            Line.save(to_save)
 
 
 class InventoryLine(metaclass=PoolMeta):
     __name__ = 'stock.inventory.line'
 
-    @classmethod
-    def create_values4complete(cls, inventory, quantity):
-        values = super(InventoryLine, cls).create_values4complete(inventory,
-            quantity)
-        if inventory.init_quantity_zero:
-            values['quantity'] = 0.0
-        return values
+    @fields.depends('inventory')
+    def update_for_complete(self, quantity):
+        super().update_for_complete(quantity)
+        if self.inventory and self.inventory.init_quantity_zero:
+            self.quantity = 0.0
