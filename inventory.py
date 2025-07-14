@@ -33,6 +33,12 @@ class Inventory(metaclass=PoolMeta):
         Line = pool.get('stock.inventory.line')
         Product = pool.get('product.product')
 
+        def _lot_required(product):
+            if product.lot_required:
+                if 'lost_found' in product.lot_required or 'storage' in product.lot_required:
+                    return True
+            return False
+
         grouping = cls.grouping()
         to_create = []
         for inventory in inventories:
@@ -67,7 +73,10 @@ class Inventory(metaclass=PoolMeta):
                     Line.delete([line])
                     continue
 
-                if inventory.product_category and line.product not in products:
+                if (inventory.product_category and (
+                        line.product not in products or
+                        (_lot_required(line.product) and not line.lot)
+                        )):
                     Line.delete([line])
                     continue
 
